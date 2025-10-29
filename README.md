@@ -4,26 +4,29 @@ Experimental data that was collected of runners with and without an exotendon wh
 ## Publications
 (pending)
 
-## SimTK project
+## SimTK project (data)
+
+There are 2 data share repositories here 1) the results directory and files used when executing the code in this repository (should only need this one), and 2) with raw and processed versions of the experimental data.
+  1. 
+  2. "Experimental raw data": https://simtk.org/plugins/datashare/index.php?group_id=2505
 
 
-There are 2 data share repositories here 1) with raw/processed experimental data, and 2) the results directory and files used when executing the code in this repository (should only need this one).
-
-The experimental data includes 5 subjects with the following types of data: 
+The data for this study includes 5 subjects with: 
 - Motion capture
 - Ground reaction forces
+- Inverse kinematics and dynamics
+- Scaled musculoskeletal models
 
-All the needed experimental data files are contained within the code results directory as well. 
-Within each subject folder the subdirectories are:
-- /welkexo - Exotendon running condition
-- /welknatural - Natural running condition
 
-Within each of these are subdirectories for each trial, or gait cycle simulated. Each of those then contains the results and files for the simulation of that gait cycle, /expdata (which contains all necessary experimental data and model files for that subject and gait cycle. 
+All the needed experimental data files are contained within the code results directory as well. The downloaded folder should be located (from the code repo): '../testresults - Copy - Copy/results/'
+
+Within each subject directory there are subdirectories for each condition (natural or exotendon running) and each trial (or gait cycle) simulated. Each of those then contains the results and files for the simulation of that gait cycle, /expdata (which contains all necessary experimental data and model files for that subject and gait cycle. 
+i.e.
+  - muscleEnergyModel/../testresults - Copy - Copy/results/welk005/welkexo/trial01 –> contains all the simulation files and results for Subject5, for the first exotendon trial including experimental reference data in a subdirectory /expdata.
 
 
 ## Github
-https://github.com/stingjp/muscleEnergyModel/
-Note: this is the main repository that I work from, and should contain all that is in this one. This reposotory has been trimmed down to the essentials in order to run this project. 
+Feel free to leave issues or comments if you run into issues or have questions! 
 
 ## Running the code
 The majority of the codebase was written in python. The python files in the repository were written in python 3.10.14. The OpenSim version built for this project was 4.5.1 (commit: cf3ef35).
