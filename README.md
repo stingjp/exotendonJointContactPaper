@@ -6,9 +6,9 @@ Experimental data that was collected of runners with and without an exotendon wh
 
 ## SimTK project (data)
 
-There are 2 data share repositories here 1) the results directory and files used when executing the code in this repository (should only need this one), and 2) with raw and processed versions of the experimental data.
-  1. 
-  2. "Experimental raw data": https://simtk.org/plugins/datashare/index.php?group_id=2505
+There are 2 data share repositories here 1) the results directory and files used when executing the code in this repository (should only need this one), and 2) with raw and processed versions of the experimental data.  
+1. "Exotendon simulation and experimental data": https://simtk.org/plugins/datashare/?group_id=3596
+2. "Experimental raw data": https://simtk.org/plugins/datashare/index.php?group_id=2505
 
 
 The data for this study includes 5 subjects with: 
