@@ -36,16 +36,12 @@ Clone the repository.
 Then create the results directory located at "../results/" from the main repository. This is where the directories from simtk should be located.   
 
 ### Running simulations
-#### Within a subject-condition-trial: 
 
+#### 1. runsubjects_py.py - Call from main repository.
+This script is set up to be a wrapper where you can specify which subjects [line 190], conditions [line 191], and trials [line 192] you would like to simulate. The main call to simulate each combination is line 220, which calls analyzesubject() from simulationSetups.py.
 
-analyzeSubject.m allows you to run multiple simulations/analyses on a single subject. You can customize what simulations and analyses you would like to run. Options and desctiptions follow, starting with the ones used for paper results:
-- torqueStateTrackGRFPrescribe.m -> formulates a torque-driven state tracking (IK results) problem with prescribed GRFs. 
-- muscleStateTrackGRFPrescribe.m -> formulates a muscle-driven state tracking problem with prescribed GRFs. 
-- muscleStateTrackGRFPrescribe_firstpass.m, muscleStateTrackGRFPrescribe_secondpass.m, muscleStateTrackGRFPrescribe_thirdpass.m -> these are the same as muscleStateTrackGRFPrescribe.m ^ but have approximate weights that may aid in generating progressively better results. The secondpass script is currently set up to provide the final results from the simulations. 
-
-#### To batch process subjects, conditions, or trials, call runsubjects1.m (edit for which subjects, conditions, trials to run). This wrapper script can call analyzeSubject.m or analyzeSubject_setup.m - be sure to specify and set up that file for what analyses and simulations you would like to complete. 
-
+#### 2. simulationSetups.py - support function to define your simulations.
+This set of functions provide utility for various simulation types. The primary results come from the muscleStateTrackGRFPrescribe_thirdpass() function. This sets up a muscle-driven, kinematic tracking, GRF prescribed MocoTrack problem. The script is set up to pull all the relevant files from the (previously downloaded) simTK results directories, where it will utlimately save the simulation results as well.  
 
 #### Post-simulation analysis can be run after the simulation solves within the same analyzeSubject script. (below)
 - analyzeMetabolicCost.m -> takes the simulated solution and performs all the metabolics computations. Computes average metaboalic cost of the gait cycle, stance and swing costs, as well as individual muscle costs. 
@@ -55,6 +51,10 @@ analyzeSubject.m allows you to run multiple simulations/analyses on a single sub
 - Throughout the analysis there is a data structure called 'Issues' that keeps track of any flags that the analysis files returns, and what they are. This is helpful when batching many simulations and subjects.
 
 
-#### Other post-simulation analyses (often run on multiple subject results):
+#### Other post-simulation analyses (often run on multiple subject results)
+- calcContactForces.py
+- calcContactForces_hip.py
+- calcContactForces_ankle.py  
+These functions can be used to run the Joint Reaction Analysis (JRA) on the simulation results. These scripts are all similar to one another. They will will go through the subject results directories, run the JRA, then compile the results, and plot them for visualization. Paper plots were generated using the plotting in these scripts. The scripts also generate visualizations of muscle activations, joint trajectories, and moments for both natural and exotendon running. 
 
-#### There are other scripts and code in the repository, but were not used in the final analysis of this project. Therefore, their functionality is not tested. 
+#### There exists other scripts and code in the repository, but were not used in the final analysis of this project. Therefore, their functionality is not tested. 
