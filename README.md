@@ -6,7 +6,7 @@ Experimental data that was collected of runners with and without an exotendon wh
 
 ## SimTK project (data)
 
-There are 2 data share repositories here 1) the results directory and files used when executing the code in this repository (should only need this one), and 2) with raw and processed versions of the experimental data.  
+There are 2 data share repositories here 1) the results directory and files used when executing the code in this repository (only need this one, includes needed experimental data), and 2) additional raw and processed versions of other experimental data.  
 1. "Exotendon simulation and experimental data": https://simtk.org/plugins/datashare/?group_id=3596
 2. "Experimental raw data": https://simtk.org/plugins/datashare/index.php?group_id=2505
 
@@ -44,17 +44,14 @@ This script is set up to be a wrapper where you can specify which subjects [line
 This set of functions provide utility for various simulation types. The primary results come from the muscleStateTrackGRFPrescribe_thirdpass() function. This sets up a muscle-driven, kinematic tracking, GRF prescribed MocoTrack problem. The script is set up to pull all the relevant files from the (previously downloaded) simTK results directories, where it will utlimately save the simulation results as well.  
 
 #### Post-simulation analysis can be run after the simulation solves within the same analyzeSubject script. (below)
-- analyzeMetabolicCost.m -> takes the simulated solution and performs all the metabolics computations. Computes average metaboalic cost of the gait cycle, stance and swing costs, as well as individual muscle costs. 
-- computeIDFromResults.m -> takes the solution, and performs an analysis of the dynamics. It will return instances where reserves and residuals exceed the recommended thresholds by (Hicks et al. 2015). 
-- computeKinematicDifferences.m -> takes the solution and plots differences between the dynamically consistent solution and the input kinematics. 
-- computeMarkerRMSE.m -> takes the solution and computes the output marker trajectory RMSE from the experimental markers. 
-- Throughout the analysis there is a data structure called 'Issues' that keeps track of any flags that the analysis files returns, and what they are. This is helpful when batching many simulations and subjects.
-
-
-#### Other post-simulation analyses (often run on multiple subject results)
 - calcContactForces.py
 - calcContactForces_hip.py
 - calcContactForces_ankle.py  
-These functions can be used to run the Joint Reaction Analysis (JRA) on the simulation results. These scripts are all similar to one another. They will will go through the subject results directories, run the JRA, then compile the results, and plot them for visualization. Paper plots were generated using the plotting in these scripts. The scripts also generate visualizations of muscle activations, joint trajectories, and moments for both natural and exotendon running. 
+These functions can be used to run the Joint Reaction Analysis (JRA) on the simulation results. These scripts are all similar to one another. They will will go through the subject results directories, run the JRA, then compile the results, and plot them for visualization. Paper plots were generated using these scripts. The scripts also generate visualizations of muscle activations, joint trajectories, and moments for both natural and exotendon running, so users can examine the quality of the results. The scripts can be adjusted to explore any subset of the subjects, conditions, and trials.  
 
-#### There exists other scripts and code in the repository, but were not used in the final analysis of this project. Therefore, their functionality is not tested. 
+#### Other post-simulation analyses (if you want to explore other aspects of the simulations)
+- simulationSetups.py -> analyzeSubject_post() can be used to queue different analysis functions and batch process different subjects, similar to the main simulation call.
+- simulationSetups.py -> cumulativeLoading() can be called to perform an analysis to gather data to explore more cumulative loading metrics during running.
+- OsimUtilityfunctions.py contains a number of useful functions that can be used to gather gait cycle timings, plot inverse dynamics motions, plot simulated joint moments, get muscle forces, etc. (many of these are used throughout the previous scripts mentioned). 
+
+#### There exists some other scripts and code in the repository that were not used in the final analysis of this project. Therefore, their functionality is not tested. 
