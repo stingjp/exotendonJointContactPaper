@@ -16,7 +16,7 @@ import pdb
 import re
 import argparse
 from examplePolynomialPathFitter_plotting import (plot_coordinate_samples, plot_path_lengths, plot_moment_arms)
-
+import numpy as np
 
 # start with the blanket analyze subject function to call other simulations. 
 def analyzeSubject(subject, condition, trial, whatfailed, trackGRF, halfcycle, fitpaths, wantpaths, jointreact, guessmin, guess100, guessIK, guessPrev):
@@ -52,7 +52,7 @@ def analyzeSubject(subject, condition, trial, whatfailed, trackGRF, halfcycle, f
     return whatfailed
 
 # analyze mimic to just do some post processing
-def analyzeSubject_post(subject, condition, trial):
+def analyzeSubject_post(subject, condition, trial, exoTensions):
     # set up the paths
     print('working on Subject-condition-trial...')
     repodir = 'C:\\Users\\jonstingel\\code\\muscleModel\\muscleEnergyModel\\'
@@ -89,10 +89,117 @@ def analyzeSubject_post(subject, condition, trial):
     # # ouf.IDplotter(osim.TimeSeriesTable('muscletrack_moments_py.sto'), 'muscletrack', True)
     # ouf.IDplotter(osim.TimeSeriesTable('muscletrack_redo_moments_py.sto'), 'muscletrack_redo', True, [subject, condition, trial])
 
+    # get exotendon tension plots/data
+    exoTensions = ouf.getExotendonTension(subjectname, trialname, workingdir, exoTensions)
+
+
+
     ## lets see if we can get the polynomial paths fit and a model outputs
-    modelProcessor = osim.ModelProcessor('simple_model_all_the_probes.osim')
+    # modelProcessor = osim.ModelProcessor('simple_model_all_the_probes.osim')
     # modelProcessor = osim.ModelProcessor('13pre_polyfit.osim')
-    newmodel = replaceMusclePaths(modelProcessor, 'results_IK_redoarms.mot', newfit=True, subjdir=subjdir)
+    # newmodel = replaceMusclePaths(modelProcessor, 'results_IK_redoarms.mot', newfit=True, subjdir=subjdir)
+
+# analyze mimic to just do some post processing
+def cumulativeLoading(subject, condition, trial):
+    # set up the paths
+    print('working on Subject-condition-trial...')
+    repodir = 'C:\\Users\\jonstingel\\code\\muscleModel\\muscleEnergyModel\\'
+    resultsbasedir = os.path.join(repodir,'..\\results\\')
+    analysisbasedir = os.path.join(repodir,'..\\analysis\\')
+    # get the current working directory
+    workingdir = os.getcwd()
+    sctdir = os.path.join(resultsbasedir,subject,condition,trial)
+    
+    subjdir = os.path.join(repodir, '..\\results\\' + subject)
+    
+    # get the trial name
+    trialname = os.path.basename(workingdir)
+    # go up one level
+    os.chdir('..')
+    # get the condition name
+    condname = os.path.basename(os.getcwd())
+    # go up one level
+    os.chdir('..')
+    # get the subject name
+    subjectname = os.path.basename(os.getcwd())
+    # get the experiment name
+    experimentname = subjectname[0:4]
+    # go back to the working directory
+    os.chdir(workingdir)
+    # create a list of issues
+    Issues = []
+    
+    # import matplotlib.pyplot as plt
+    # import pdb; pdb.set_trace()
+
+    
+    # figure out how to access the GRF
+    GRFFile = os.path.join(workingdir, 'ground_reaction.mot')
+    grfData = osim.TimeSeriesTable(GRFFile)
+    # get time
+    grfTime = grfData.getIndependentColumn()
+    # get vertical
+    grfVertical_r = grfData.getDependentColumn('rF_y').to_numpy()
+    grfVertical_l = grfData.getDependentColumn('lF_y').to_numpy()
+
+    # figure out how to get just stance parts, and time
+    grfY_r = [grfVertical_r[i] for i in range(len(grfVertical_r)//2) if grfVertical_r[i] > 0]
+    stance_r = [grfTime[i] for i in range(len(grfVertical_r)//2) if grfVertical_r[i] > 0]
+    grfY_l = [grfVertical_l[i] for i in range(len(grfVertical_l)//2,len(grfVertical_l)) if grfVertical_l[i] > 0]
+    stance_l = [grfTime[i] for i in range(len(grfVertical_l)//2,len(grfVertical_l)) if grfVertical_l[i] > 0]
+
+    # extra time
+    stance_extra = [grfTime[i] for i in range(len(grfVertical_r)//2,len(grfVertical_r)) if grfVertical_r[i] > 0]
+
+    # then compute stance durations... .
+    stancetime = np.average([stance_r[-1] - stance_r[0], stance_l[-1] - stance_l[0]])
+
+    # then load in the actual knee force data
+    kneeForceFile = os.path.join(workingdir, 'jr_analysis_redo_jra_redo_all_ReactionLoads.sto')
+    kneeForceData = osim.TimeSeriesTable(kneeForceFile)
+    jraTime = kneeForceData.getIndependentColumn()
+    kneeForce_r = kneeForceData.getDependentColumn('walker_knee_r_on_tibia_r_in_tibia_r_fy').to_numpy()
+    kneeForce_l = kneeForceData.getDependentColumn('walker_knee_l_on_tibia_l_in_tibia_l_fy').to_numpy()
+    
+    # # get shortened knee force data based on start and end of stance times. 
+    # kneeForce_r_stance = [kneeForce_r[i] for i in range(len(kneeForce_r)) if jraTime[i] >= stance_r[0] and jraTime[i] <= stance_r[-1]]
+    # jraShortTime_r = [jraTime[i] for i in range(len(jraTime)) if jraTime[i] >= stance_r[0] and jraTime[i] <= stance_r[-1]]
+    # kneeForce_l_stance = [kneeForce_l[i] for i in range(len(kneeForce_l)) if jraTime[i] >= stance_l[0] and jraTime[i] <= stance_l[-1]]
+    # jraShortTime_l = [jraTime[i] for i in range(len(jraTime)) if jraTime[i] >= stance_l[0] and jraTime[i] <= stance_l[-1]]
+
+    # # then compute cumulative loading - integral of force, divided by stance time, and divided by stride length
+    # if len(jraShortTime_r) > 1 and len(kneeForce_r_stance) > 1:
+    #     kneeForce_r_avg = np.trapz(kneeForce_r_stance, jraShortTime_r) #/ (jraShortTime_r[-1] - jraShortTime_r[0])
+    # else:
+    #     kneeForce_r_integral = 0
+    # if len(jraShortTime_l) > 1 and len(kneeForce_l_stance) > 1:
+    #     kneeForce_l_avg = np.trapz(kneeForce_l_stance, jraShortTime_l) #/ (jraShortTime_l[-1] - jraShortTime_l[0])
+    # else:
+    #     kneeForce_l_integral = 0
+    
+
+    # FULL STRIDESSSSSSS 
+    kneeForce_r_avg = np.trapz(kneeForce_r, jraTime)
+    kneeForce_l_avg = np.trapz(kneeForce_l, jraTime)
+
+
+    # now think about step length and dividing by that as well. 
+    avgSpeed = 2.7 # m/s
+    # stepTime = np.average([stance_l[0] - stance_r[0], stance_extra[0] - stance_l[0]])
+    # stepLength = avgSpeed * stepTime # m
+    strideTime = jraTime[-1] - jraTime[0] # seconds
+    strideLength = avgSpeed * strideTime # m
+    # then return them
+    cumulativeLoad = -np.average([kneeForce_r_avg, kneeForce_l_avg]) / (strideLength * strideTime)
+
+    # load model and get mass
+    modelFile = os.path.join(workingdir, 'simple_model_all_the_probes.osim')
+    model = osim.Model(modelFile)
+    s = model.initSystem()
+    modelmass = model.getTotalMass(s)
+    # import pdb; pdb.set_trace()
+
+    return cumulativeLoad/(modelmass * 9.81) # in multiples of body weight
 
 # muscle driven state tracking simulation - second pass 
 def muscleStateTrackGRFPrescribe_secondpass(repodir, subjectname, conditionname, trialname):
@@ -763,60 +870,59 @@ def muscleStateTrackGRFPrescribe_thirdpass(repodir, subjectname, conditionname, 
         solver.setGuess(randomguess)
 
 
-    # solve and visualize
-    try:
-        solution = study.solve()
-        if wantpaths: 
-            if trackGRF:
-                if jointreact: 
-                    solution.write('muscle_statetrack_grftrack_solution_redoarms_jointreact_poly_py.sto')
-                    osim.STOFileAdapter.write(solution.exportToControlsTable(), 'muscletrack_redo_controls_jointreact_poly_py.sto')
-                    osim.STOFileAdapter.write(solution.exportToStatesTable(), 'muscletrack_redo_states_jointreact_poly_py.sto')
-                else:
-                    solution.write('muscle_statetrack_grftrack_solution_redoarms_poly_py.sto')
-                    osim.STOFileAdapter.write(solution.exportToControlsTable(), 'muscletrack_redo_controls_poly_py.sto')
-                    osim.STOFileAdapter.write(solution.exportToStatesTable(), 'muscletrack_redo_states_poly_py.sto')
-            else:
-                if jointreact: 
-                    solution.write('muscle_statetrack_grfprescribe_solution_redoarms_jointreact_poly_py.sto')
-                    osim.STOFileAdapter.write(solution.exportToControlsTable(), 'muscletrack_redo_controls_jointreact_poly_py.sto')
-                    osim.STOFileAdapter.write(solution.exportToStatesTable(), 'muscletrack_redo_states_jointreact_poly_py.sto')
-                else:
-                    solution.write('muscle_statetrack_grfprescribe_solution_redoarms_poly_py.sto')
-                    osim.STOFileAdapter.write(solution.exportToControlsTable(), 'muscletrack_redo_controls_poly_py.sto')
-                    osim.STOFileAdapter.write(solution.exportToStatesTable(), 'muscletrack_redo_states_poly_py.sto')
-        else:
-            if trackGRF:
-                if jointreact: 
-                    solution.write('muscle_statetrack_grftrack_solution_redoarms_jointreact_py.sto')
-                    osim.STOFileAdapter.write(solution.exportToControlsTable(), 'muscletrack_redo_controls_jointreact_py.sto')
-                    osim.STOFileAdapter.write(solution.exportToStatesTable(), 'muscletrack_redo_states_jointreact_py.sto')
-                else:
-                    solution.write('muscle_statetrack_grftrack_solution_redoarms_py.sto')
-                    osim.STOFileAdapter.write(solution.exportToControlsTable(), 'muscletrack_redo_controls_py.sto')
-                    osim.STOFileAdapter.write(solution.exportToStatesTable(), 'muscletrack_redo_states_py.sto')
+    # # solve and visualize
+    # try:
+    #     solution = study.solve()
+    #     if wantpaths: 
+    #         if trackGRF:
+    #             if jointreact: 
+    #                 solution.write('muscle_statetrack_grftrack_solution_redoarms_jointreact_poly_py.sto')
+    #                 osim.STOFileAdapter.write(solution.exportToControlsTable(), 'muscletrack_redo_controls_jointreact_poly_py.sto')
+    #                 osim.STOFileAdapter.write(solution.exportToStatesTable(), 'muscletrack_redo_states_jointreact_poly_py.sto')
+    #             else:
+    #                 solution.write('muscle_statetrack_grftrack_solution_redoarms_poly_py.sto')
+    #                 osim.STOFileAdapter.write(solution.exportToControlsTable(), 'muscletrack_redo_controls_poly_py.sto')
+    #                 osim.STOFileAdapter.write(solution.exportToStatesTable(), 'muscletrack_redo_states_poly_py.sto')
+    #         else:
+    #             if jointreact: 
+    #                 solution.write('muscle_statetrack_grfprescribe_solution_redoarms_jointreact_poly_py.sto')
+    #                 osim.STOFileAdapter.write(solution.exportToControlsTable(), 'muscletrack_redo_controls_jointreact_poly_py.sto')
+    #                 osim.STOFileAdapter.write(solution.exportToStatesTable(), 'muscletrack_redo_states_jointreact_poly_py.sto')
+    #             else:
+    #                 solution.write('muscle_statetrack_grfprescribe_solution_redoarms_poly_py.sto')
+    #                 osim.STOFileAdapter.write(solution.exportToControlsTable(), 'muscletrack_redo_controls_poly_py.sto')
+    #                 osim.STOFileAdapter.write(solution.exportToStatesTable(), 'muscletrack_redo_states_poly_py.sto')
+    #     else:
+    #         if trackGRF:
+    #             if jointreact: 
+    #                 solution.write('muscle_statetrack_grftrack_solution_redoarms_jointreact_py.sto')
+    #                 osim.STOFileAdapter.write(solution.exportToControlsTable(), 'muscletrack_redo_controls_jointreact_py.sto')
+    #                 osim.STOFileAdapter.write(solution.exportToStatesTable(), 'muscletrack_redo_states_jointreact_py.sto')
+    #             else:
+    #                 solution.write('muscle_statetrack_grftrack_solution_redoarms_py.sto')
+    #                 osim.STOFileAdapter.write(solution.exportToControlsTable(), 'muscletrack_redo_controls_py.sto')
+    #                 osim.STOFileAdapter.write(solution.exportToStatesTable(), 'muscletrack_redo_states_py.sto')
 
-            else:
-                if jointreact: 
-                    solution.write('muscle_statetrack_grfprescribe_solution_redoarms_jointreact_py.sto')
-                    osim.STOFileAdapter.write(solution.exportToControlsTable(), 'muscletrack_redo_controls_jointreact_py.sto')
-                    osim.STOFileAdapter.write(solution.exportToStatesTable(), 'muscletrack_redo_states_jointreact_py.sto')
-                else:
-                    solution.write('muscle_statetrack_grfprescribe_solution_redoarms_py.sto')
-                    osim.STOFileAdapter.write(solution.exportToControlsTable(), 'muscletrack_redo_controls_py.sto')
-                    osim.STOFileAdapter.write(solution.exportToStatesTable(), 'muscletrack_redo_states_py.sto')
+    #         else:
+    #             if jointreact: 
+    #                 solution.write('muscle_statetrack_grfprescribe_solution_redoarms_jointreact_py.sto')
+    #                 osim.STOFileAdapter.write(solution.exportToControlsTable(), 'muscletrack_redo_controls_jointreact_py.sto')
+    #                 osim.STOFileAdapter.write(solution.exportToStatesTable(), 'muscletrack_redo_states_jointreact_py.sto')
+    #             else:
+    #                 solution.write('muscle_statetrack_grfprescribe_solution_redoarms_py.sto')
+    #                 osim.STOFileAdapter.write(solution.exportToControlsTable(), 'muscletrack_redo_controls_py.sto')
+    #                 osim.STOFileAdapter.write(solution.exportToStatesTable(), 'muscletrack_redo_states_py.sto')
         
-        print('ran the base')
-    except:
-        print(os.getcwd())
-        print('could not solve the problem')
-        whatfailed[subjectname + '_' + conditionname + '_' + trialname] = os.getcwd()
-        solution = solution.unseal()
-        solution.write('muscle_statetrack_grfprescribe_solution_unseal_redoarms_py.sto')
-        return whatfailed
+    #     print('ran the base')
+    # except:
+    #     print(os.getcwd())
+    #     print('could not solve the problem')
+    #     whatfailed[subjectname + '_' + conditionname + '_' + trialname] = os.getcwd()
+    #     solution = solution.unseal()
+    #     solution.write('muscle_statetrack_grfprescribe_solution_unseal_redoarms_py.sto')
+    #     return whatfailed
     
-    # solution = osim.MocoTrajectory('muscle_statetrack_grfprescribe_solution_redoarms_py.sto')
-
+    solution = osim.MocoTrajectory('muscle_statetrack_grfprescribe_solution_redoarms_py.sto')
 
     # osim.STOFileAdapter.write(solution.exportToControlsTable(), 'muscletrack_redo_controls_py.sto')
     # osim.STOFileAdapter.write(solution.exportToStatesTable(), 'muscletrack_redo_states_py.sto')
@@ -827,7 +933,15 @@ def muscleStateTrackGRFPrescribe_thirdpass(repodir, subjectname, conditionname, 
     #     print('could not read the solution')
     #     whatfailed[subjectname + '_' + conditionname + '_' + trialname] = os.getcwd()
     #     return whatfailed
-    
+
+    # create file with exotendon outputs
+    analyzeStrings_exotendon = osim.StdVectorString();
+    analyzeStrings_exotendon.append('.*HOBL.*');
+    table_exotendon = study.analyze(solution, analyzeStrings_exotendon);
+    osim.STOFileAdapter.write(table_exotendon, 'muscletrack_redo_exotendon_py.sto');
+
+
+
     # do some post analysis
     analyzeStrings_forcePaths = osim.StdVectorString();
     analyzeStrings_forcePaths.append('.*externalloads.*');
